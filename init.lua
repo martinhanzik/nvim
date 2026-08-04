@@ -223,10 +223,15 @@ do
   --  Use CTRL+<hjkl> to switch between windows
   --
   --  See `:help wincmd` for a list of all window commands
-  vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-  vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
-  vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
-  vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
+  --
+  -- NOTE: These are set in the "ZELLIJ NAVIGATION" section below instead, so that
+  -- CTRL+<hjkl> also crosses the boundary into adjacent Zellij panes.
+  -- To go back to plain Neovim-only split navigation, delete that section and
+  -- uncomment these four lines.
+  -- vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
+  -- vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+  -- vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
+  -- vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
   -- NOTE: Some terminals have colliding keymaps or are not able to send distinct keycodes
   -- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
@@ -318,6 +323,44 @@ end
 ---@param repo string
 ---@return string
 local function gh(repo) return 'https://github.com/' .. repo end
+
+-- ============================================================
+-- ZELLIJ NAVIGATION
+-- Seamless CTRL+<hjkl> movement across Neovim splits *and* Zellij panes
+-- ============================================================
+do
+  -- `zellij-nav.nvim` makes CTRL+<hjkl> move between Neovim splits as usual, but
+  -- when there is no split in that direction it hands off to the adjacent Zellij
+  -- pane instead. It does this by shelling out to `zellij action move-focus`,
+  -- which is a control message sent to the Zellij server - NOT a simulated
+  -- keypress. That means it works even while Zellij is in locked mode
+  -- (CTRL+g), so you can stay locked permanently and still navigate freely.
+  --
+  -- No Zellij-side configuration is required for this.
+  --
+  -- NOTE: Zellij's own keybinds (CTRL+t tabs, CTRL+p panes, CTRL+n resize, ...)
+  -- are still swallowed while locked. To use those, navigate to a non-Neovim
+  -- pane first, or unlock with CTRL+g.
+  vim.pack.add { gh 'swaits/zellij-nav.nvim' }
+  require('zellij-nav').setup {}
+
+  -- The `...Tab` variants also move to the previous/next Zellij *tab* when there
+  -- is no pane to the left/right either.
+  vim.keymap.set('n', '<C-h>', '<Cmd>ZellijNavigateLeftTab<CR>', { silent = true, desc = 'Move focus left (split/pane/tab)' })
+  vim.keymap.set('n', '<C-j>', '<Cmd>ZellijNavigateDown<CR>', { silent = true, desc = 'Move focus down (split/pane)' })
+  vim.keymap.set('n', '<C-k>', '<Cmd>ZellijNavigateUp<CR>', { silent = true, desc = 'Move focus up (split/pane)' })
+  vim.keymap.set('n', '<C-l>', '<Cmd>ZellijNavigateRightTab<CR>', { silent = true, desc = 'Move focus right (split/pane/tab)' })
+
+  -- Leave Zellij unlocked when Neovim exits, so you aren't stranded in locked
+  -- mode in whatever shell is left behind in this pane.
+  vim.api.nvim_create_autocmd('VimLeave', {
+    group = vim.api.nvim_create_augroup('zellij-nav-unlock', { clear = true }),
+    desc = 'Return Zellij to normal mode on exit',
+    callback = function()
+      if vim.env.ZELLIJ then vim.fn.system { 'zellij', 'action', 'switch-mode', 'normal' } end
+    end,
+  })
+end
 
 -- ============================================================
 -- SECTION 3: UI / CORE UX PLUGINS
