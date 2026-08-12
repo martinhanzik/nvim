@@ -367,16 +367,6 @@ do
   vim.keymap.set('n', '<C-j>', '<Cmd>ZellijNavigateDown<CR>', { silent = true, desc = 'Move focus down (split/pane)' })
   vim.keymap.set('n', '<C-k>', '<Cmd>ZellijNavigateUp<CR>', { silent = true, desc = 'Move focus up (split/pane)' })
   vim.keymap.set('n', '<C-l>', '<Cmd>ZellijNavigateRightTab<CR>', { silent = true, desc = 'Move focus right (split/pane/tab)' })
-
-  -- Leave Zellij unlocked when Neovim exits, so you aren't stranded in locked
-  -- mode in whatever shell is left behind in this pane.
-  vim.api.nvim_create_autocmd('VimLeave', {
-    group = vim.api.nvim_create_augroup('zellij-nav-unlock', { clear = true }),
-    desc = 'Return Zellij to normal mode on exit',
-    callback = function()
-      if vim.env.ZELLIJ then vim.fn.system { 'zellij', 'action', 'switch-mode', 'normal' } end
-    end,
-  })
 end
 
 -- ============================================================
