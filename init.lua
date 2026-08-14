@@ -101,6 +101,13 @@ do
   -- Set to true if you have a Nerd Font installed and selected in the terminal
   vim.g.have_nerd_font = true
 
+  -- Private Node install, used on hosts without a system node (npm-backed Mason
+  -- packages: bashls, yamlls, dockerls). Install it with scripts/install-node.sh.
+  local node_bin = vim.fs.joinpath(vim.fn.stdpath 'data', 'node', 'bin')
+  if vim.uv.fs_stat(node_bin) then vim.env.PATH = node_bin .. ':' .. vim.env.PATH end
+  -- Keep npm's cache out of a possibly shared $HOME
+  vim.env.npm_config_cache = vim.fs.joinpath(vim.fn.stdpath 'cache', 'npm')
+
   -- [[ Setting options ]]
   --  See `:help vim.o`
   -- NOTE: You can change these options as you wish!
