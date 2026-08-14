@@ -32,8 +32,13 @@ case "$(uname -m)" in
   *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
 esac
 
-ext=tar.xz
-command -v xz >/dev/null 2>&1 || ext=tar.gz
+if command -v xz >/dev/null 2>&1; then
+  ext=tar.xz
+  decompress="xz -dc"
+else
+  ext=tar.gz
+  decompress="gzip -dc"
+fi
 
 base="https://nodejs.org/dist/latest-v${major}.x"
 file=$(curl -fsSL "$base/" | grep -o "node-v[0-9.]*-$os-$arch\.$ext" | head -1)
@@ -42,7 +47,8 @@ file=$(curl -fsSL "$base/" | grep -o "node-v[0-9.]*-$os-$arch\.$ext" | head -1)
 echo "installing $file -> $dest"
 rm -rf "$dest"
 mkdir -p "$dest"
-curl -fsSL "$base/$file" | tar -x -C "$dest" --strip-components=1
+# Decompress explicitly - older GNU tar won't auto-detect compression on a pipe
+curl -fsSL "$base/$file" | $decompress | tar -x -C "$dest" --strip-components=1
 
 "$dest/bin/node" --version
 echo "done - restart nvim and run :MasonToolsUpdate"
