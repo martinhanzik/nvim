@@ -746,7 +746,7 @@ do
     yamlls = {},
     dockerls = {},
     bashls = {},
-    ty = {},
+    ty = {}, -- binary comes from mise, not Mason (see mise_provided below)
     -- clangd = {},
     -- gopls = {},
     -- pyright = {},
@@ -757,8 +757,6 @@ do
     --
     -- But for many setups, the LSP (`ts_ls`) will work just fine
     -- ts_ls = {},
-
-    stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs
     lua_ls = {
@@ -812,7 +810,14 @@ do
   --    :Mason
   --
   -- You can press `g?` for help in this menu.
-  local ensure_installed = vim.tbl_keys(servers or {})
+  -- These come from ~/.config/mise/config.toml so they exist on PATH before
+  -- Neovim starts, and on machines where Mason cannot fetch them.
+  local mise_provided = { ty = true }
+
+  local ensure_installed = {}
+  for name, _ in pairs(servers or {}) do
+    if not mise_provided[name] then table.insert(ensure_installed, name) end
+  end
   vim.list_extend(ensure_installed, {
     -- You can add other tools here that you want Mason to install
   })
@@ -851,6 +856,7 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
+      lua = { 'stylua' },
       -- rust = { 'rustfmt' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },
